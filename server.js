@@ -94,10 +94,8 @@ client.on("messageCreate",async message => {
     }
     if (message.content.startsWith("!新しい問題チャンネル") || message.content.startsWith("!mkch")) {
       let line = message.content.split(",");
-      let kari = message.guild.channels.cache.find(
-        channel => channel.name === line[1]
-      );
-      if (kari !== undefined) {
+      let ch = message.guild.channels.cache.find(channel => channel.name === line[1]);
+      if (ch !== undefined) {
         message.channel.send("このチャンネル名は既に存在しています");
         return;
       }
@@ -190,26 +188,18 @@ client.on("messageCreate",async message => {
         thisGuildTestData.tested.push(ransu);
         if (thisGuildTestData.type === "0") {
           message.channel.send(thisGuildTestData.questions[ransu].statement);
-          thisGuildTestData.trueAns.push(
-            thisGuildTestData.questions[ransu].answer
-          );
+          thisGuildTestData.trueAns.push(thisGuildTestData.questions[ransu].answer);
         } else if (thisGuildTestData.type === "1") {
           message.channel.send(thisGuildTestData.questions[ransu].answer);
-          thisGuildTestData.trueAns.push(
-            thisGuildTestData.questions[ransu].statement
-          );
+          thisGuildTestData.trueAns.push(thisGuildTestData.questions[ransu].statement);
         } else if (thisGuildTestData.type === "2") {
           let r = Math.floor(Math.random() * 2);
           if (r === 0) {
             message.channel.send(thisGuildTestData.questions[ransu].statement);
-            thisGuildTestData.trueAns.push(
-              thisGuildTestData.questions[ransu].answer
-            );
+            thisGuildTestData.trueAns.push(thisGuildTestData.questions[ransu].answer);
           } else {
             message.channel.send(thisGuildTestData.questions[ransu].answer);
-            thisGuildTestData.trueAns.push(
-              thisGuildTestData.questions[ransu].statement
-            );
+            thisGuildTestData.trueAns.push(thisGuildTestData.questions[ransu].statement);
           }
         }
       } else if (
