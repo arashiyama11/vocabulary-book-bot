@@ -4,6 +4,7 @@ const { execSync, exec } = require("child_process")
 const discord = require("discord.js");
 const { Intents, Client } = require("discord.js");
 const { isGeneratorFunction } = require('util/types');
+const {decode}=require("iconv-lite")
 const options = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
 };
@@ -328,7 +329,8 @@ client.on("messageCreate", async message => {
         fs.writeFileSync("run.kt", body)
         let botMsg = await message.reply("trying compile...")
         const before = Date.now()
-        exec("kotlinc run.kt -include-runtime -d run.jar", { timeout: 60000 }, (err, sto, ste) => {
+        exec("chcp 932")
+        exec("kotlinc run.kt -include-runtime -d run.jar", { timeout: 60000 ,encoding:"Shift JIS"}, (err, sto, ste) => {
           if (err) {
             botMsg.edit("```kt\n" +(ste===""?"コンパイル時間が60秒を超えたため強制終了しました":ste) + "```")
             return
@@ -336,12 +338,13 @@ client.on("messageCreate", async message => {
           const compileTime = Date.now() - before
           botMsg.edit("compile success")
           const runTime = Date.now()
-          exec("java -jar run.jar", { timeout: 10000 }, (err, sto, ste) => {
+          exec("java -jar run.jar", { timeout: 10000 ,encoding:"Shift JIS"}, (err, sto, ste) => {
+            console.log(decode(sto,"Shift JIS"))
             if (err) {
               botMsg.edit("```kt\n" +(ste===""?"実行時間が10秒を超えたため強制終了しました":ste) + "```")
               return
             }
-            botMsg.edit("```kt\n" + ( sto || "出力なし") +"```\n実行時間:" + (Date.now() - runTime) / 1000 + "秒\nコンパイル時間:" + compileTime / 1000 + "秒")
+            botMsg.edit("```kt\n" + ( decode(sto,"Shift JIS") || "出力なし") +"```\n実行時間:" + (Date.now() - runTime) / 1000 + "秒\nコンパイル時間:" + compileTime / 1000 + "秒")
           })
         })
         return
