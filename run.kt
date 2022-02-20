@@ -1,4 +1,4 @@
 fun main(){
-var list=mutableListOf<Int>()
-for(i in 1..10000)list+=i
+var list=listOf(1)
+println(list[3])
 }

@@ -1,1 +1,1 @@
-console.log(36..toString(2))
+"a"
