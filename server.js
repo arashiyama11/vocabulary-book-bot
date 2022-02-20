@@ -1,8 +1,9 @@
 require('dotenv').config();
 const fs = require("fs")
-const { execSync } = require("child_process")
+const { execSync, exec } = require("child_process")
 const discord = require("discord.js");
 const { Intents, Client } = require("discord.js");
+const { isGeneratorFunction } = require('util/types');
 const options = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
 };
@@ -16,9 +17,9 @@ function brackets(s) {
 }
 const reaction = (num) => (["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"][num])
 
-client.on("messageCreate",async message => {
+client.on("messageCreate", async message => {
   if (message.author.bot && message.author.name != "単語帳bot v13")
-  if (message.channel.type !== "GUILD_TEXT") return;
+    if (message.channel.type !== "GUILD_TEXT") return;
   if (message.guild.channels.cache.get(message.channel.parentId).name !== "単語帳bot") return;
   if (message.content === "test") {
     let id = message.guild.channels.cache.find(d => d.type = "GUILD_CATEGORY").id
@@ -301,50 +302,48 @@ client.on("messageCreate",async message => {
     if (message.author.id === "842017764402135071") {
       if (message.content.startsWith("eval\n")) {
         try {
-          const before=Date.now()
-          let result = eval("(function (){" + message.content.substring(5) + "})()")||"出力なし"
-          message.reply("```js\n" + result + "```\n実行時間"+(Date.now()-before)/1000+"秒")
+          const before = Date.now()
+          let result = eval("(function (){" + message.content.substring(5) + "})()") || "出力なし"
+          message.reply("```js\n" + result + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
         } catch (e) {
-          console.log(e + "")
           message.reply("```js\n" + e + "```")
         }
         return;
       }
-      if(message.content.startsWith("js\n")){
-        let body=message.content.substring(3)
-        try {
-          fs.writeFileSync("run.js",body)
-          const before=Date.now()
-          let log=execSync("node run.js").toString()||"出力なし"
-          message.reply("```js\n"+log+"```\n実行時間:"+(Date.now()-before)/1000+"秒")
-        } catch (e) {
-          message.reply("```js\n"+e.toString().substring(92)+"```")
-        }
+      if (message.content.startsWith("js\n")) {
+        let body = message.content.substring(3)
+        fs.writeFileSync("run.js", body)
+        const before = Date.now()
+        exec("node run.js", { timeout: 5000 }, (err, sto, ste) => {
+          if (err) {
+            message.reply(ste === "" ? "```実行時間が5秒を超えたため強制終了しました" : "```js\n" + ste.substring(51) + "```")
+            return
+          }
+          message.reply("```js\n" +( sto||"出力なし") +"```"+ "実行時間:" + (Date.now() - before) / 1000 + "秒")
+        })
         return
       }
-      if(message.content.startsWith("kt\n")){
-        let body="fun main(){\n"+message.content.substring(3)+"\n}"
-        fs.writeFileSync("run.kt",body)
-        let botMsg=await message.reply("trying compile...")
-        try {
-          const before=Date.now()
-          execSync("kotlinc run.kt -include-runtime -d run.jar")
-          var compileTime=Date.now()-before
-        } catch (e) {
-          botMsg.edit("```kt\n"+e.toString().substring(65)+"```")
-          console.log(e)
-          return
-        }
-        try {
-            botMsg.edit("compile success")
-            const runTime=Date.now()
-            const log=execSync("java -jar run.jar").toString()||"出力なし"
-            botMsg.edit("```kt\n"+log+"```\n実行時間:"+(Date.now()-runTime)/1000+"秒\nコンパイル時間:"+compileTime/1000+"秒")
-            console.log(log)
-        }catch(e){
-            botMsg.edit("```kt\n"+e.toString().substring(40)+"```")
-            console.log(e)
-        }
+      if (message.content.startsWith("kt\n")) {
+        let body = "fun main(){\n" + message.content.substring(3) + "\n}"
+        fs.writeFileSync("run.kt", body)
+        let botMsg = await message.reply("trying compile...")
+        const before = Date.now()
+        exec("kotlinc run.kt -include-runtime -d run.jar", { timeout: 60000 }, (err, sto, ste) => {
+          if (err) {
+            botMsg.edit("```kt\n" +(ste===""?"コンパイル時間が60秒を超えたため強制終了しました":ste) + "```")
+            return
+          }
+          const compileTime = Date.now() - before
+          botMsg.edit("compile success")
+          const runTime = Date.now()
+          exec("java -jar run.jar", { timeout: 10000 }, (err, sto, ste) => {
+            if (err) {
+              botMsg.edit("```kt\n" +(ste===""?"実行時間が10秒を超えたため強制終了しました":ste) + "```")
+              return
+            }
+            botMsg.edit("```kt\n" + ( sto || "出力なし") +"```\n実行時間:" + (Date.now() - runTime) / 1000 + "秒\nコンパイル時間:" + compileTime / 1000 + "秒")
+          })
+        })
         return
       }
     }
@@ -356,7 +355,7 @@ client.on("messageCreate",async message => {
         .addField("!新しい問題チャンネル(または!mkch),__name__", "```新しい問題用チャンネルを作成します```")
         .addField("!テスト開始(または!start),__channelName__,__type__", "```channelNameのチャンネルの問題でテストを開始します\ntypeは0~2を半角で入力し、テストの方法を選択します\n0は通常通りに解答します\n1は答えから問題文を解答します\n2は0,1のランダムです```")
         .addField("!テスト強制終了(または!stop)", "```テストを強制終了します```")
-        .setFooter("下線部のみ変更してください")
+        .setFooter({text:"下線部のみ変更してください"})
       message.channel.send({ embeds: [embed] });
     }
   }
