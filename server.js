@@ -19,7 +19,7 @@ const reaction = (num) => (["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣
 
 client.on("messageCreate", async message => {
   if (message.author.bot && message.author.name != "単語帳bot v13")
-    if (message.channel.type !== "GUILD_TEXT") return;
+  if (message.channel.type !== "GUILD_TEXT") return;
   if (message.guild.channels.cache.get(message.channel.parentId).name !== "単語帳bot") return;
   if (message.content === "test") {
     let id = message.guild.channels.cache.find(d => d.type = "GUILD_CATEGORY").id
