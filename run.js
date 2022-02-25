@@ -1,0 +1,1 @@
+for(let i of Array(10**9)){}

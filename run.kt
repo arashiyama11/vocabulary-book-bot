@@ -1,4 +1,3 @@
 fun main(){
-var list=listOf(1)
-println(list[3])
+for(i in 0..10){}
 }

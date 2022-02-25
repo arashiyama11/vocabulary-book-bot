@@ -39,7 +39,7 @@ client.on("messageCreate", async message => {
             .map(message => message);
           for (let a = 0; a < msgs.length; a++) {
             if (a === 0 || (a + 1) % 5 === 0) {
-              msgs[a].reactions?.removeAll()
+              msgs[a]?.reactions?.removeAll()
             }
           }
           const length = msgs.length;
