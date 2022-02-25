@@ -38,8 +38,8 @@ client.on("messageCreate", async message => {
             .filter(message => !message.author.bot)
             .map(message => message);
           for (let a = 0; a < msgs.length; a++) {
-            if (a === 0 || (a + 1) % 5 === 0) {
-              msgs[a]?.reactions?.removeAll()
+            if (msgs[a].reactions.cache.size!=0) {
+              msgs[a].reactions.removeAll()
             }
           }
           const length = msgs.length;
