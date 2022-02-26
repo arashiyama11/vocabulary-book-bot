@@ -22,15 +22,11 @@ client.on("messageCreate", async message => {
   if (message.author.bot && message.author.name != "単語帳bot v13")
   if (message.channel.type !== "GUILD_TEXT") return;
   if (message.guild.channels.cache.get(message.channel.parentId).name !== "単語帳bot") return;
-  if (message.content === "test") {
-    let id = message.guild.channels.cache.find(d => d.type = "GUILD_CATEGORY").id
-    message.guild.channels.create("child", { parent: id })
-  }
   if (message.channel.name !== "単語帳ターミナル") {
     if (message.content.split("//").length !== 2) {
       message.delete();
     }
-    if (message.content === "!ナンバリング" || message.content === "!numbering") {
+    if (message.content === "！ナンバリング" || message.content === "!numbering") {
       message.channel.messages
         .fetch({ limit: 100, after: "0" })
         .then(msg => {
@@ -94,8 +90,8 @@ client.on("messageCreate", async message => {
       });
       thisGuildTestData = testData.find(data => data.guildid === message.guild.id);
     }
-    if (message.content.startsWith("!新しい問題チャンネル") || message.content.startsWith("!mkch")) {
-      let line = message.content.split(",");
+    if (message.content.startsWith("！問題チャンネル作成") || message.content.startsWith("!mkch")) {
+      let line = message.content.split(message.content.startsWith("!mkch")?",":"、");
       let ch = message.guild.channels.cache.find(channel => channel.name === line[1]);
       if (ch !== undefined) {
         message.channel.send("このチャンネル名は既に存在しています");
@@ -106,19 +102,29 @@ client.on("messageCreate", async message => {
           type: "text",
           parent: message.guild.channels.cache.find(g => g.name === "単語帳bot")
         }).then(newChannel => {
-          newChannel.send("「問題文//解答」の形式で100題未満で入力してください\n「!ナンバリング」または「!numbering」で題数を数えられます\n()の中の文字及び括弧自体は質問はされますが解答されなくても正解になります");
+          newChannel.send("「問題文//解答」の形式で100題未満で入力してください\n「!numbering」または「！ナンバリング」で題数を数えられます\n()の中の文字及び括弧自体は質問はされますが解答されなくても正解になります");
         }).catch(e => console.log(e))
-        message.channel.send("問題チャンネル" + line[1] + "を制作しました");
+        message.channel.send("問題チャンネル" + line[1] + "を作成しました");
       } else {
-        message.channel.send("「!新しい問題チャンネル(または!mkch),チャンネル名」の形式で入力し、チャンネル名に”,”を含まないようにしてください");
+        message.channel.send("「!mkch(！新しい問題チャンネル),チャンネル名」の形式で入力し、チャンネル名に”,”と”、”を含まないようにしてください");
       }
     }
-    if ((message.content.startsWith("!テスト開始") || message.content.startsWith("!start")) && !thisGuildTestData.testing) {
-      let line = message.content.split(",");
+    if ((message.content.startsWith("！テスト開始") || message.content.startsWith("!start")) && !thisGuildTestData.testing) {
+      let line = message.content.split(message.content.startsWith("!start")?",":"、");
       let questionsChannel = message.guild.channels.cache.find(channel => channel.name === line[1]);
+      if(isNaN(line[2]-0)){
+        let fullWidthNam=["０","１","２"]
+        let index=fullWidthNam.indexOf(line[2])
+        if(index===-1){
+          message.channel.send("typeは0~2で指定してください")
+          return
+        }else{
+          line[2]=index
+        }
+      }
       thisGuildTestData.type = line[2];
-      if (!(thisGuildTestData.type === "0" || thisGuildTestData.type === "1" || thisGuildTestData.type === "2")) {
-        message.channel.send("typeは半角数字の0~2で指定してください");
+      if (!(thisGuildTestData.type == "0" || thisGuildTestData.type == "1" || thisGuildTestData.type == "2")) {
+        message.channel.send("typeは0~2で指定してください");
         return;
       }
       if (questionsChannel === undefined) {
@@ -156,7 +162,7 @@ client.on("messageCreate", async message => {
           }
           message.channel.send("テストを開始します");
         });
-    } else if ((message.content.startsWith("!テスト強制終了") ||
+    } else if ((message.content.startsWith("！テスト途中終了") ||
       message.content.startsWith("!stop")) &&
       thisGuildTestData.testing &&
       message.author.id === thisGuildTestData.user
@@ -167,7 +173,7 @@ client.on("messageCreate", async message => {
       thisGuildTestData.tested = [];
       thisGuildTestData.answers = [];
       thisGuildTestData.trueAns = [];
-      message.channel.send("テストを強制終了しました");
+      message.channel.send("テストを途中終了しました");
     } else if (
       thisGuildTestData.testing &&
       ((message.author.username === "単語帳bot v13" &&
@@ -277,7 +283,7 @@ client.on("messageCreate", async message => {
             }
             //data格納終了
             let ans =
-              "「問題文//解答」の形式で100題未満で入力してください\n「!ナンバリング」または「!numbering」で題数を数えられます\n()の中の文字及び括弧自体は質問はされますが解答されなくても正解になります\n";
+              "「問題文//解答」の形式で100題未満で入力してください\n「!numbering」または「！ナンバリング」で題数を数えられます\n()の中の文字及び括弧自体は質問はされますが解答されなくても正解になります\n";
             for (let a = 0; a < SoFA.length; a++) {
               let per =
                 Math.round(
@@ -350,14 +356,14 @@ client.on("messageCreate", async message => {
         return
       }
     }
-    if (message.content === "!") {
+    if (message.content === "!"||message.content ==="！") {
       const embed = new discord.MessageEmbed()
         .setTitle("コマンド一覧")
-        .setDescription("```diff\n-数字・記号は必ず半角で入力してください\n```")
+        .setDescription("```\n-日本語入力、英語入力に対応しています。日本語入力の場合は区切り文字を読点、英語入力の場合は区切り文字をカンマにしてください。\n詳しくい説明はこちらのURLまでhttps://github.com/jinjanow/Vocabulary-Book-Bot#readme\n```")
         .setColor(7506394)
-        .addField("!新しい問題チャンネル(または!mkch),__name__", "```新しい問題用チャンネルを作成します```")
-        .addField("!テスト開始(または!start),__channelName__,__type__", "```channelNameのチャンネルの問題でテストを開始します\ntypeは0~2を半角で入力し、テストの方法を選択します\n0は通常通りに解答します\n1は答えから問題文を解答します\n2は0,1のランダムです```")
-        .addField("!テスト強制終了(または!stop)", "```テストを強制終了します```")
+        .addField("!mkch(！問題チャンネル作成),__name__", "```新しい問題用チャンネルを作成します```")
+        .addField("!start(！テスト開始),__channelName__,__type__", "```channelNameのチャンネルの問題でテストを開始します\ntypeは0~2を半角で入力し、テストの方法を選択します\n0は通常通りに解答します\n1は答えから問題文を解答します\n2は0,1のランダムです```")
+        .addField("!stop(!テスト途中終了)", "```テストを途中終了します```")
         .setFooter({text:"下線部のみ変更してください"})
       message.channel.send({ embeds: [embed] });
     }
