@@ -1,10 +1,6 @@
 require('dotenv').config();
-const fs = require("fs")
-const { execSync, exec } = require("child_process")
 const discord = require("discord.js");
-const { Intents, Client } = require("discord.js");
-const { isGeneratorFunction } = require('util/types');
-const { decode } = require("iconv-lite")
+const { Client } = require("discord.js");
 const options = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
 };
@@ -19,7 +15,7 @@ function brackets(s) {
 const reaction = (num) => (["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"][num])
 
 client.on("messageCreate", async message => {
-  if (message.author.bot && message.author.name != "単語帳bot v13")return
+  if (message.author.bot && message.author.username != "単語帳bot v13") return
   if (message.channel.type !== "GUILD_TEXT") return;
   if (message.guild.channels.cache.get(message.channel.parentId).name !== "単語帳bot") return;
   if (message.channel.name !== "単語帳ターミナル") {
@@ -72,6 +68,7 @@ client.on("messageCreate", async message => {
     }
     return;
   }
+
   if (message.channel.name === "単語帳ターミナル") {
     var thisGuildTestData = testData.find(
       data => data.guildid === message.guild.id
@@ -109,6 +106,7 @@ client.on("messageCreate", async message => {
         message.channel.send("「!mkch(！新しい問題チャンネル),チャンネル名」の形式で入力し、チャンネル名に”,”と”、”を含まないようにしてください");
       }
     }
+
     if ((message.content.startsWith("！テスト開始") || message.content.startsWith("!start")) && !thisGuildTestData.testing) {
       let line = message.content.split(message.content.startsWith("!start") ? "," : "、");
       let questionsChannel = message.guild.channels.cache.find(channel => channel.name === line[1]);
@@ -175,12 +173,13 @@ client.on("messageCreate", async message => {
       message.channel.send("テストを途中終了しました");
       return
     }
-     if (
+    if (
       thisGuildTestData.testing && (((message.author.username === "単語帳bot v13" && message.content === "テストを開始します") || message.author.id === thisGuildTestData.user))
     ) {
       if (message.content !== "テストを開始します") {
         thisGuildTestData.answers.push(message.content);
       }
+
       if (thisGuildTestData.testing &&
         thisGuildTestData.questions.length > thisGuildTestData.tested.length) {
         let ransu = Math.floor(
@@ -304,55 +303,15 @@ client.on("messageCreate", async message => {
           });
       }
     }
-    if (message.author.id === "842017764402135071") {
-      if (message.content.startsWith("eval\n")) {
-        try {
-          const before = Date.now()
-          let result = eval("(function (){" + message.content.substring(5) + "})()") || "出力なし"
-          message.reply("```js\n" + result + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
-        } catch (e) {
-          message.reply("```js\n" + e + "```")
-        }
-        return;
-      }
-      if (message.content.startsWith("js\n")) {
-        let body = message.content.substring(3)
-        fs.writeFileSync("run.js", body)
+    if (message.author.id === "842017764402135071" && message.content.startsWith("eval\n")) {
+      try {
         const before = Date.now()
-        exec("node run.js", { timeout: 5000 }, (err, sto, ste) => {
-          if (err) {
-            message.reply(ste === "" ? "```実行時間が5秒を超えたため強制終了しました" : "```js\n" + ste.substring(51) + "```")
-            return
-          }
-          message.reply("```js\n" + (sto || "出力なし") + "```" + "実行時間:" + (Date.now() - before) / 1000 + "秒")
-        })
-        return
+        let result = eval("(function (){" + message.content.substring(5) + "})()") || "出力なし"
+        message.reply("```js\n" + result + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
+      } catch (e) {
+        message.reply("```js\n" + e + "```")
       }
-      if (message.content.startsWith("kt\n")) {
-        let body = "fun main(){\n" + message.content.substring(3) + "\n}"
-        fs.writeFileSync("run.kt", body)
-        let botMsg = await message.reply("trying compile...")
-        const before = Date.now()
-        exec("chcp 932")
-        exec("kotlinc run.kt -include-runtime -d run.jar", { timeout: 60000, encoding: "Shift JIS" }, (err, sto, ste) => {
-          if (err) {
-            botMsg.edit("```kt\n" + (ste === "" ? "コンパイル時間が60秒を超えたため強制終了しました" : ste) + "```")
-            return
-          }
-          const compileTime = Date.now() - before
-          botMsg.edit("compile success")
-          const runTime = Date.now()
-          exec("java -jar run.jar", { timeout: 10000, encoding: "Shift JIS" }, (err, sto, ste) => {
-            console.log(decode(sto, "Shift JIS"))
-            if (err) {
-              botMsg.edit("```kt\n" + (ste === "" ? "実行時間が10秒を超えたため強制終了しました" : ste) + "```")
-              return
-            }
-            botMsg.edit("```kt\n" + (decode(sto, "Shift JIS") || "出力なし") + "```\n実行時間:" + (Date.now() - runTime) / 1000 + "秒\nコンパイル時間:" + compileTime / 1000 + "秒")
-          })
-        })
-        return
-      }
+      return;
     }
     if (message.content === "!" || message.content === "！") {
       const embed = new discord.MessageEmbed()
