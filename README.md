@@ -99,4 +99,4 @@ user集める(c)
 # 製作者  
 ## [jinjanow](https://twitter.com/mejiroship)
 ### 
-### sorce-code https://github.com/jinjanow/Vocabulary-Book-Bot
+### sorce-code https://github.com/jinjanow/Vocabulary-Book-Bot/blob/main/server.js
