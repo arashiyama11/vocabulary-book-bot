@@ -19,8 +19,8 @@ function brackets(s) {
 const reaction = (num) => (["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"][num])
 
 client.on("messageCreate", async message => {
-  if (message.author.bot && message.author.name != "単語帳bot v13")
-    if (message.channel.type !== "GUILD_TEXT") return;
+  if (message.author.bot && message.author.name != "単語帳bot v13")return
+  if (message.channel.type !== "GUILD_TEXT") return;
   if (message.guild.channels.cache.get(message.channel.parentId).name !== "単語帳bot") return;
   if (message.channel.name !== "単語帳ターミナル") {
     if (message.content.split("//").length !== 2) {
