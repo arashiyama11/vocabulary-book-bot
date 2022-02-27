@@ -1,5 +1,5 @@
 {
-  "name": "discordbot",
+  "name": "Vocabulary-Book-Bot",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
@@ -15,15 +15,13 @@
     "type": "git",
     "url": "git+https://github.com/jinjanow/Vocabulary-Book-Bot.git"
   },
-  "keywords": [
-    "arashiyama"
-  ],
-  "author": "arashiyama",
+  "keywords": [],
+  "author": "jinjanow",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/jinjanow/discordBot/issues"
+    "url": "https://github.com/jinjanow/Vocabulary-Book-Bot/issues"
   },
-  "homepage": "https://github.com/jinjanow/discordBot#readme",
+  "homepage": "https://github.com/jinjanow/Vocabulary-Book-Bot#readme",
   "dependencies": {
     "child_process": "^1.0.2",
     "discord.js": "^13.6.0",
