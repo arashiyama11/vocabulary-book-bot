@@ -13,7 +13,9 @@ function brackets(s) {
   return s?.substring(0, left) + s?.substring(right + 1, s.length);
 }
 const reaction = (num) => (["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"][num])
-
+function sendAllGuild(msg){
+  client.guilds.cache.forEach(guild=>guild.channels.cache.find(ch=>ch.name==="単語帳ターミナル").send(msg))
+}
 client.on("messageCreate", async message => {
   if (message.author.bot && message.author.username != "単語帳bot v13") return
   if (message.channel.type !== "GUILD_TEXT") return;
