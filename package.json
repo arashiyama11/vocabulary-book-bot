@@ -15,7 +15,8 @@
   "homepage": "https://github.com/jinjanow/Vocabulary-Book-Bot#readme",
   "dependencies": {
     "discord.js": "^13.6.0",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "json-bigint": "^1.0.0"
   },
   "engines": {
     "node": "17.5.0"
