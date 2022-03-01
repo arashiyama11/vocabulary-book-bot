@@ -1,6 +1,6 @@
 require('dotenv').config();
 const discord = require("discord.js");
-const { Client } = require("discord.js");
+const { Client } = discord
 const options = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
 };
