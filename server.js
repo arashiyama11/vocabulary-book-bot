@@ -308,7 +308,7 @@ client.on("messageCreate", async message => {
     if (message.author.id === "842017764402135071" && message.content.startsWith("eval\n")) {
       try {
         const before = Date.now()
-        let result = eval("(function (){" + message.content.substring(5) + "})()") || "出力なし"
+        let result = eval("(async function (){" + message.content.substring(5) + "})()") || "出力なし"
         message.reply("```js\n" + result + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
       } catch (e) {
         message.reply("```js\n" + e + "```")
