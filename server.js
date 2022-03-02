@@ -1,4 +1,5 @@
 require('dotenv').config();
+const JSONbig=require("json-bigint")
 const discord = require("discord.js");
 const { Client } = discord
 const options = {
@@ -354,3 +355,23 @@ client.on("ready", () => {
   console.log("bot is running")
 })
 client.login(process.env.TOKEN);
+function indent(json){
+  json=JSONbig.stringify(json)
+  let arr=[...JSONbig.stringify(json)]
+  let depth=0
+  for(let i=0;i<arr.length;i++){
+    if(["{","["].some((s)=>arr[i]===s)){
+      arr[i]=arr[i]+"\n"
+      depth++
+      arr[i]=(arr[i]+"　".repeat(depth))
+    }
+    if(arr[i]===","){
+      arr[i]=arr[i]+"\n"+"　".repeat(depth)
+    }
+    if(["}","]"].some((s)=>arr[i]===s)){
+      depth--
+      arr[i]="\n"+"　".repeat(depth)+arr[i]
+    }
+  }
+  return arr.join("").replace(/["\\]/g,"")
+}
