@@ -1,13 +1,13 @@
 require('dotenv').config();
 const JSONbig=require("json-bigint")
 const discord = require("discord.js");
+const fs=require("fs")
 const { Client } = discord
 const options = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
 };
 const client = new Client(options);
-let testData = [];
-let data = [];
+let {testData,data}=JSONbig.parse(fs.readFileSync("./data.json"))
 function brackets(s) {
   let left = s?.indexOf("(");
   let right = s?.indexOf(")");
@@ -71,7 +71,6 @@ client.on("messageCreate", async message => {
     }
     return;
   }
-
   if (message.channel.name === "単語帳ターミナル") {
     var thisGuildTestData = testData.find(
       data => data.guildid === message.guild.id
@@ -85,11 +84,12 @@ client.on("messageCreate", async message => {
         answers: [],
         trueAns: [],
         tested: [],
-        channel: null,
+        channel: {},
         questionsId: []
       });
       thisGuildTestData = testData.find(data => data.guildid === message.guild.id);
     }
+    thisGuildTestData.channel=client.channels.cache.get(thisGuildTestData?.channel?.id)
     if (message.content.startsWith("！問題チャンネル作成") || message.content.startsWith("!mkch")) {
       let line = message.content.split(message.content.startsWith("!mkch") ? "," : "、");
       let ch = message.guild.channels.cache.find(channel => channel.name === line[1]);
@@ -99,7 +99,7 @@ client.on("messageCreate", async message => {
       }
       if (line.length === 2) {
         message.guild.channels.create(line[1], {
-          type: "text",
+          type: "GUILD_TEXT",
           parent: message.guild.channels.cache.find(g => g.name === "単語帳bot")
         }).then(newChannel => {
           newChannel.send("「問題文//解答」の形式で100題未満で入力してください\n「!numbering」または「！ナンバリング」で題数を数えられます\n()の中の文字及び括弧自体は質問はされますが解答されなくても正解になります");
@@ -133,6 +133,7 @@ client.on("messageCreate", async message => {
         return;
       }
       thisGuildTestData.channel = questionsChannel;
+      thisGuildTestData.channelid=questionsChannel.id
       thisGuildTestData.testing = true;
       thisGuildTestData.user = message.author.id;
       let messages = await questionsChannel.messages.fetch({ limit: 100, after: "0" })
@@ -278,6 +279,7 @@ client.on("messageCreate", async message => {
               }
             }
             //data格納終了
+            fs.writeFileSync("data.json",JSONbig.stringify({"data":data,"testData":testData},null," "))
             let ans =
               "「問題文//解答」の形式で100題未満で入力してください\n「!numbering」または「！ナンバリング」で題数を数えられます\n()の中の文字及び括弧自体は質問はされますが解答されなくても正解になります\n";
             for (let a = 0; a < SoFA.length; a++) {
@@ -297,22 +299,14 @@ client.on("messageCreate", async message => {
             thisGuildTestData.tested = [];
             thisGuildTestData.answers = [];
             thisGuildTestData.trueAns = [];
-            thisGuildTestData.channel = null;
-            thisGuildTestData.user = null;
+            thisGuildTestData.questionsId = [];
           });
       }
     }
     if (message.author.id === "842017764402135071" && message.content.startsWith("eval\n")) {
-      /*
-      try {
-        message.reply("```js\n" + result + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
-      } catch (e) {
-        message.reply("```js\n" + e + "```")
-      }*/
       const before = Date.now()
       new Promise((reslove,reject)=>{
          let result=(eval("(async function (){" + message.content.substring(5) + "})()") || "出力なし")
-         //if(typeof result ==="object")reslove(JSON.stringify(result))
          reslove(result)
       }).then((result)=>{
         if(typeof result==="object")return message.reply("```\n" + JSONbig.stringify(result) + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
@@ -351,23 +345,3 @@ client.on("ready", () => {
   console.log("bot is running")
 })
 client.login(process.env.TOKEN);
-function indent(json){
-  json=JSONbig.stringify(json)
-  let arr=[...JSONbig.stringify(json)]
-  let depth=0
-  for(let i=0;i<arr.length;i++){
-    if(["{","["].some((s)=>arr[i]===s)){
-      arr[i]=arr[i]+"\n"
-      depth++
-      arr[i]=(arr[i]+"　".repeat(depth))
-    }
-    if(arr[i]===","){
-      arr[i]=arr[i]+"\n"+"　".repeat(depth)
-    }
-    if(["}","]"].some((s)=>arr[i]===s)){
-      depth--
-      arr[i]="\n"+"　".repeat(depth)+arr[i]
-    }
-  }
-  return arr.join("").replace(/["\\]/g,"")
-}
