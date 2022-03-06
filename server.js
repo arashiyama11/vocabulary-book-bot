@@ -247,21 +247,17 @@ client.on("messageCreate", async message => {
             SoF =
               SoF +
               q +
-              "問目:正解(正しい解答:" +
-              thisGuildTestData.trueAns[a] +
-              "あなたの解答:" +
-              thisGuildTestData.answers[a] +
-              ")\n";
+              "問目:正解\n";
             SoFA.push(true);
           } else {
             SoF =
               SoF +
               q +
-              "問目:不正解(正しい解答:" +
+              "問目:不正解\n正しい解答:" +
               thisGuildTestData.trueAns[a] +
-              "あなたの解答:" +
+              "\nあなたの解答:" +
               thisGuildTestData.answers[a] +
-              ")\n";
+              "\n";
             SoFA.push(false);
           }
         }
