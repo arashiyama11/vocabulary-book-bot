@@ -196,8 +196,9 @@ client.on("messageCreate", async message => {
         }
       }
       message.channel.send("テストを開始します");
-      editLog(message)
-      return fs.writeFileSync("data.json", JSONbig.stringify({ "data": data, "testData": testData }, null, " "))
+      fs.writeFileSync("data.json", JSONbig.stringify({ "data": data, "testData": testData }, null, " "))
+      return editLog(message)
+
     }
     if ((message.content.startsWith("！テスト途中終了") ||
       message.content.startsWith("!stop")) &&
@@ -211,8 +212,9 @@ client.on("messageCreate", async message => {
       thisGuildTestData.answers = [];
       thisGuildTestData.trueAns = [];
       message.channel.send("テストを途中終了しました");
-      editLog(message)
-      return fs.writeFileSync("data.json", JSONbig.stringify({ "data": data, "testData": testData }, null, " "))
+      fs.writeFileSync("data.json", JSONbig.stringify({ "data": data, "testData": testData }, null, " "))
+      return editLog(message)
+
     }
     if (
       thisGuildTestData.testing && (((message.author.username === "単語帳bot v13" && message.content === "テストを開始します") || message.author.id === thisGuildTestData.user))
@@ -340,8 +342,9 @@ client.on("messageCreate", async message => {
             thisGuildTestData.answers = [];
             thisGuildTestData.trueAns = [];
             thisGuildTestData.questionsId = [];
-            editLog(message)
             fs.writeFileSync("data.json", JSONbig.stringify({ "data": data, "testData": testData }, null, " "))
+            editLog(message)
+
           });
       }
     }
