@@ -1,27 +1,53 @@
 require('dotenv').config();
-const JSONbig=require("json-bigint")
+const JSONbig = require("json-bigint")
 const discord = require("discord.js");
-const fs=require("fs")
-const { Client } = discord
+const fs = require("fs")
+const { Client, Intents ,Util} = discord
 const options = {
-  intents: ["GUILDS", "GUILD_MESSAGES"],
+  intents: Object.values(Intents.FLAGS),
 };
 const client = new Client(options);
-let {testData,data}=JSONbig.parse(fs.readFileSync("./data.json"))
+let { testData, data } = JSONbig.parse(fs.readFileSync("./data.json"))
 function brackets(s) {
   let left = s?.indexOf("(");
   let right = s?.indexOf(")");
   return s?.substring(0, left) + s?.substring(right + 1, s.length);
 }
 const reaction = (num) => (["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"][num])
-function sendAllGuild(msg){
-  client.guilds.cache.forEach(guild=>guild.channels.cache.find(ch=>ch.name==="単語帳ターミナル").send(msg))
+function sendAllGuild(msg) {
+  client.channels.cache.filter(ch => ch.name === "単語帳ターミナル").forEach(ch => ch.send(msg))
+}
+function sendAllLog(msg) {
+  client.channels.cache.filter(ch => ch.name === "単語帳log").forEach(ch => ch.send(msg))
+}
+async function editLog(message) {
+  let msg = await message.guild.channels.cache.find(ch => ch.name === "単語帳log").messages.fetch({ limit: 1, after: "0" })
+  msg=msg.map(m=>m)[0]
+  let body=makeUpdateLog(message)
+  if(body.length>4000)return msg.edit(body.substring(0,4000))
+  msg.edit(body)
+}
+function makeUpdateLog(message) {
+  let guildData = data.find(d => d.guildid === message.guild.id).data
+  let result = guildData.map((d) => {
+    let chName = message.guild.channels.cache.get(d.channelid).name
+    let sfData = d.data.map((value, index) => {
+      let s = "　" + (++index) + "問目　正解数:" + value.s + ",不正解数:" + value.f + "\n"
+      return s
+    })
+    return chName + "\n" + sfData.join("")
+  })
+  return result.join("")
 }
 client.on("messageCreate", async message => {
   if (message.author.bot && message.author.username != "単語帳bot v13") return
   if (message.channel.type !== "GUILD_TEXT") return;
   if (message.guild.channels.cache.get(message.channel.parentId).name !== "単語帳bot") return;
   if (message.channel.name !== "単語帳ターミナル") {
+    if (message.author.bot) return
+    if (message.channel.name === "単語帳log") {
+      return message.delete()
+    }
     if (message.content.split("//").length !== 2) {
       message.delete();
     }
@@ -89,7 +115,16 @@ client.on("messageCreate", async message => {
       });
       thisGuildTestData = testData.find(data => data.guildid === message.guild.id);
     }
-    thisGuildTestData.channel=client.channels.cache.get(thisGuildTestData?.channel?.id)
+    thisGuildTestData.channel = client.channels.cache.get(thisGuildTestData?.channel?.id)
+    if (message.content.startsWith("!mklogch") || message.content.startsWith("！ログチャンネル作成")) {
+      if (message.guild.channels.cache.find(ch => ch.name === "単語帳log") !== undefined) return message.channel.send("既にログ用のチャンネルが存在します")
+      const logch = await message.guild.channels.create("単語帳log", { parent: message.channel.parent })
+      message.channel.send("logチャンネルを作成しました")
+      for (const m of Util.splitMessage(makeUpdateLog(message))) {
+        logch.send(m);
+      }
+      return
+    }
     if (message.content.startsWith("！問題チャンネル作成") || message.content.startsWith("!mkch")) {
       let line = message.content.split(message.content.startsWith("!mkch") ? "," : "、");
       let ch = message.guild.channels.cache.find(channel => channel.name === line[1]);
@@ -133,7 +168,7 @@ client.on("messageCreate", async message => {
         return;
       }
       thisGuildTestData.channel = questionsChannel;
-      thisGuildTestData.channelid=questionsChannel.id
+      thisGuildTestData.channelid = questionsChannel.id
       thisGuildTestData.testing = true;
       thisGuildTestData.user = message.author.id;
       let messages = await questionsChannel.messages.fetch({ limit: 100, after: "0" })
@@ -161,7 +196,8 @@ client.on("messageCreate", async message => {
         }
       }
       message.channel.send("テストを開始します");
-      return fs.writeFileSync("data.json",JSONbig.stringify({"data":data,"testData":testData},null," "))
+      editLog(message)
+      return fs.writeFileSync("data.json", JSONbig.stringify({ "data": data, "testData": testData }, null, " "))
     }
     if ((message.content.startsWith("！テスト途中終了") ||
       message.content.startsWith("!stop")) &&
@@ -175,7 +211,8 @@ client.on("messageCreate", async message => {
       thisGuildTestData.answers = [];
       thisGuildTestData.trueAns = [];
       message.channel.send("テストを途中終了しました");
-      return fs.writeFileSync("data.json",JSONbig.stringify({"data":data,"testData":testData},null," "))
+      editLog(message)
+      return fs.writeFileSync("data.json", JSONbig.stringify({ "data": data, "testData": testData }, null, " "))
     }
     if (
       thisGuildTestData.testing && (((message.author.username === "単語帳bot v13" && message.content === "テストを開始します") || message.author.id === thisGuildTestData.user))
@@ -290,8 +327,12 @@ client.on("messageCreate", async message => {
               let thisline = "問題" + b + ":正答率" + per + "%\n";
               ans = ans + thisline;
             }
-            msg.edit(ans);
-            message.channel.send("テスト終了\n" + SoF, { split: true });
+            if(ans.length>4000){
+              msg.edit(ans.substring(0,4000))
+            }else msg.edit(ans);
+            for (const m of Util.splitMessage("テスト終了\n" + SoF)) {
+              message.channel.send(m);
+            }
             thisGuildTestData.testing = false;
             thisGuildTestData.questType = 0;
             thisGuildTestData.questions = [];
@@ -299,19 +340,20 @@ client.on("messageCreate", async message => {
             thisGuildTestData.answers = [];
             thisGuildTestData.trueAns = [];
             thisGuildTestData.questionsId = [];
-            fs.writeFileSync("data.json",JSONbig.stringify({"data":data,"testData":testData},null," "))
+            editLog(message)
+            fs.writeFileSync("data.json", JSONbig.stringify({ "data": data, "testData": testData }, null, " "))
           });
       }
     }
     if (message.author.id === "842017764402135071" && message.content.startsWith("eval\n")) {
       const before = Date.now()
-      new Promise((reslove,reject)=>{
-         let result=(eval("(async function (){" + message.content.substring(5) + "})()") || "出力なし")
-         reslove(result)
-      }).then((result)=>{
-        if(typeof result==="object")return message.reply("```\n" + JSONbig.stringify(result) + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
+      new Promise((reslove, reject) => {
+        let result = (eval("(async function (){" + message.content.substring(5) + "})()") || "出力なし")
+        reslove(result)
+      }).then((result) => {
+        if (typeof result === "object") return message.reply("```\n" + JSONbig.stringify(result) + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
         message.reply("```\n" + result + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
-      }).catch((e)=>{
+      }).catch((e) => {
         message.reply("```\n" + e + "```")
       })
       return;
@@ -343,5 +385,11 @@ client.on("guildCreate", guild => {
 });
 client.on("ready", () => {
   console.log("bot is running")
+  const embed = new discord.MessageEmbed()
+    .setTitle("restart log")
+    .addField("reason","botのメンテナンスです。")
+    .addField("TimeStamp",new Date().toLocaleString('ja-JP'))
+    .setColor(7506394)
+  sendAllLog({embeds:[embed]})
 })
 client.login(process.env.TOKEN);
