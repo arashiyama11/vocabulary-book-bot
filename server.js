@@ -2,9 +2,9 @@ require('dotenv').config();
 const JSONbig = require("json-bigint")
 const discord = require("discord.js");
 const fs = require("fs")
-const { Client, Intents ,Util} = discord
+const { Client,Util} = discord
 const options = {
-  intents: Object.values(Intents.FLAGS),
+  intents: ["GUILDS","GUILD_MESSAGES"],
 };
 const client = new Client(options);
 let { testData, data } = JSONbig.parse(fs.readFileSync("./data.json"))
