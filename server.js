@@ -8,6 +8,15 @@ const options = {
 };
 const client = new Client(options);
 let { testData, data } = JSONbig.parse(fs.readFileSync("./data.json"))
+client.on("ready", () => {
+  console.log("bot is running")
+  const embed = new discord.MessageEmbed()
+    .setTitle("restart log")
+    .addField("reason","botのメンテナンスです。")
+    .addField("TimeStamp",new Date().toLocaleString('ja-JP'))
+    .setColor(7506394)
+  sendAllLog({embeds:[embed]})
+})
 function brackets(s) {
   let left = s?.indexOf("(");
   let right = s?.indexOf(")");
@@ -28,7 +37,8 @@ async function editLog(message) {
   msg.edit(body)
 }
 function makeUpdateLog(message) {
-  let guildData = data.find(d => d.guildid === message.guild.id).data
+  let guildData = data.find(d => d.guildid === message.guild.id)?.data
+  if(guildData===undefined)return "まだテストしていません。"
   let result = guildData.map((d) => {
     let chName = message.guild.channels.cache.get(d.channelid).name
     let sfData = d.data.map((value, index) => {
@@ -119,7 +129,7 @@ client.on("messageCreate", async message => {
     if (message.content.startsWith("!mklogch") || message.content.startsWith("！ログチャンネル作成")) {
       if (message.guild.channels.cache.find(ch => ch.name === "単語帳log") !== undefined) return message.channel.send("既にログ用のチャンネルが存在します")
       const logch = await message.guild.channels.create("単語帳log", { parent: message.channel.parent })
-      message.channel.send("logチャンネルを作成しました")
+      message.channel.send("単語帳logチャンネルを作成しました")
       for (const m of Util.splitMessage(makeUpdateLog(message))) {
         logch.send(m);
       }
@@ -394,13 +404,4 @@ client.on("guildCreate", guild => {
     })
     .catch(e => console.log(e))
 });
-client.on("ready", () => {
-  console.log("bot is running")
-  const embed = new discord.MessageEmbed()
-    .setTitle("restart log")
-    .addField("reason","botのメンテナンスです。")
-    .addField("TimeStamp",new Date().toLocaleString('ja-JP'))
-    .setColor(7506394)
-  sendAllLog({embeds:[embed]})
-})
 client.login(process.env.TOKEN);
