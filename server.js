@@ -7,6 +7,9 @@ const options = {
   intents: ["GUILDS","GUILD_MESSAGES"],
 };
 const client = new Client(options);
+if(!fs.existsSync("./data.json")){
+  fs.writeFileSync("./data.json",JSON.stringify({data:[],testData:[]}))
+}
 let { testData, data } = JSONbig.parse(fs.readFileSync("./data.json"))
 client.on("ready", () => {
   console.log("bot is running")
