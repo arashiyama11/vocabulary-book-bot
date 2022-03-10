@@ -354,8 +354,16 @@ client.on("messageCreate", async message => {
         let result = (eval("(async function (){" + message.content.substring(5) + "})()") || "出力なし")
         reslove(result)
       }).then((result) => {
-        if (typeof result === "object") return message.reply("```\n" + JSONbig.stringify(result) + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
-        message.reply("```\n" + result + "```\n実行時間" + (Date.now() - before) / 1000 + "秒")
+        if(typeof result==="object")result=JSONbig.stringify(result)
+        result="```\n" + result + "```\n実行時間" + (Date.now() - before) / 1000 + "秒"
+        if(result.length>4000){
+          let msgs=Util.splitMessage(result)
+          for(const msg of msgs){
+            message.reply(msg)
+          }
+          return
+        }
+        message.reply(result)
       }).catch((e) => {
         message.reply("```\n" + e + "```")
       })
