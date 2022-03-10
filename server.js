@@ -224,6 +224,8 @@ client.on("messageCreate", async message => {
       thisGuildTestData.tested = [];
       thisGuildTestData.answers = [];
       thisGuildTestData.trueAns = [];
+      thisGuildTestData.channel={}
+      
       message.channel.send("テストを途中終了しました");
       fs.writeFileSync("data.json", JSONbig.stringify({ "data": data, "testData": testData }, null, " "))
       return editLog(message)
@@ -355,6 +357,7 @@ client.on("messageCreate", async message => {
             thisGuildTestData.answers = [];
             thisGuildTestData.trueAns = [];
             thisGuildTestData.questionsId = [];
+            thisGuildTestData.channel={}
             fs.writeFileSync("data.json", JSONbig.stringify({ "data": data, "testData": testData }, null, " "))
             editLog(message)
 
