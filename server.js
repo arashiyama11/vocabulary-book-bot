@@ -33,7 +33,7 @@ async function editLog(message) {
   let msg = await message.guild.channels.cache.find(ch => ch.name === "単語帳log").messages.fetch({ limit: 1, after: "0" })
   msg=msg.map(m=>m)[0]
   let body=makeUpdateLog(message)
-  if(body.length>4000)return msg.edit(body.substring(0,4000))
+  if(body.length>2000)return msg.edit(body.substring(0,2000))
   msg.edit(body)
 }
 function makeUpdateLog(message) {
@@ -339,8 +339,8 @@ client.on("messageCreate", async message => {
               let thisline = "問題" + b + ":正答率" + per + "%\n";
               ans = ans + thisline;
             }
-            if(ans.length>4000){
-              msg.edit(ans.substring(0,4000))
+            if(ans.length>2000){
+              msg.edit(ans.substring(0,2000))
             }else msg.edit(ans);
             for (const m of Util.splitMessage("テスト終了\n" + SoF)) {
               message.channel.send(m);
@@ -364,16 +364,16 @@ client.on("messageCreate", async message => {
         let result = (eval("(async function (){" + message.content.substring(5) + "})()"))
         reslove(result)
       }).then((result) => {
+        const time=(Date.now() - before) / 1000
         if(typeof result==="object")result=JSONbig.stringify(result,null,"  ")
-        result="```\n" + result + "```\n実行時間" + (Date.now() - before) / 1000 + "秒"
-        if(result.length>4000){
-          let msgs=Util.splitMessage(result)
-          for(const msg of msgs){
-            message.reply(msg)
+        if(result.length>1900){
+          let msgs=Util.splitMessage(result,{maxLength:1900})
+          for(let i=0;i<msgs.length;i++){
+            if(i===msgs.length-1)return message.reply("```"+msgs[i]+"```\n実行時間:"+time+"秒")
+            message.reply("```\n"+msgs[i]+"```")
           }
-          return
         }
-        message.reply(result)
+        message.reply("```\n"+result+"```\n実行時間:"+time+"秒")
       }).catch((e) => {
         message.reply("```\n" + e + "```")
       })
