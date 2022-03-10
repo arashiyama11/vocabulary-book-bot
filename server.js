@@ -361,10 +361,10 @@ client.on("messageCreate", async message => {
     if (message.author.id === "842017764402135071" && message.content.startsWith("eval\n")) {
       const before = Date.now()
       new Promise((reslove, reject) => {
-        let result = (eval("(async function (){" + message.content.substring(5) + "})()") || "出力なし")
+        let result = (eval("(async function (){" + message.content.substring(5) + "})()"))
         reslove(result)
       }).then((result) => {
-        if(typeof result==="object")result=JSONbig.stringify(result)
+        if(typeof result==="object")result=JSONbig.stringify(result,null,"  ")
         result="```\n" + result + "```\n実行時間" + (Date.now() - before) / 1000 + "秒"
         if(result.length>4000){
           let msgs=Util.splitMessage(result)
