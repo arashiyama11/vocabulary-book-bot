@@ -25,7 +25,7 @@ function brackets(s) {
   let right = s?.indexOf(")");
   return s?.substring(0, left) + s?.substring(right + 1, s.length);
 }
-const reaction = (num) => (["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"][num])
+const reaction = (num) => ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"][num];
 function sendAllGuild(msg) {
   client.channels.cache.filter(ch => ch.name === "単語帳ターミナル").forEach(ch => ch.send(msg))
 }
@@ -33,19 +33,27 @@ function sendAllLog(msg) {
   client.channels.cache.filter(ch => ch.name === "単語帳log").forEach(ch => ch.send(msg))
 }
 async function editLog(message) {
-  let msg = await message.guild.channels.cache.find(ch => ch.name === "単語帳log").messages.fetch({ limit: 1, after: "0" })
+  let ch=message.guild.channels.cache.find(ch => ch.name === "単語帳log")
+  if(ch===undefined)return
+  let msg = await ch.messages.fetch({ limit: 1, after: "0" })
   msg=msg.map(m=>m)[0]
-  let body=makeUpdateLog(message)
-  if(body.length>2000)return msg.edit(body.substring(0,2000))
+  let body=makeUpdateLog(message,false)
+  if(body.length>2000){
+    body=makeUpdateLog(message,true)
+    if(body.length>2000){
+      body=body.substring(0,2000)
+    }
+  }
   msg.edit(body)
 }
-function makeUpdateLog(message) {
+function makeUpdateLog(message,isEasy) {
   let guildData = data.find(d => d.guildid === message.guild.id)?.data
   if(guildData===undefined)return "まだテストしていません。"
   let result = guildData.map((d) => {
     let chName = message.guild.channels.cache.get(d.channelid).name
     let sfData = d.data.map((value, index) => {
       let s = "　" + (++index) + "問目　正解数:" + value.s + ",不正解数:" + value.f + "\n"
+      if(isEasy)s="　"+(++index)+"　"+value.s+","+value.f+"\n"
       return s
     })
     return chName + "\n" + sfData.join("")
@@ -111,9 +119,7 @@ client.on("messageCreate", async message => {
     return;
   }
   if (message.channel.name === "単語帳ターミナル") {
-    var thisGuildTestData = testData.find(
-      data => data.guildid === message.guild.id
-    );
+    var thisGuildTestData = testData.find(data => data.guildid === message.guild.id);
     if (thisGuildTestData === undefined) {
       testData.push({
         guildid: message.guild.id,
