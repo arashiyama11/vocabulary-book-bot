@@ -2,7 +2,6 @@ require('dotenv').config();
 const JSONbig = require("json-bigint")
 const discord = require("discord.js");
 const fs = require("fs");
-const { setDefaultResultOrder } = require('dns');
 const { Client, Util } = discord
 const options = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
@@ -39,10 +38,9 @@ function sendAllLog(msg, addTopURL) {
   })
 }
 async function editLog(message) {
-  let ch = message.guild.channels.cache.find(ch => ch.name === "単語帳log")
+  const ch = message.guild.channels.cache.find(ch => ch.name === "単語帳log")
   if (ch === undefined) return
-  let msg = await ch.messages.fetch({ limit: 1, after: "0" })
-  msg = msg.map(m => m)[0]
+  const msg = (await ch.messages.fetch({ limit: 1, after: "0" })).first()
   let body = makeUpdateLog(message, false)
   if (body.length > 2000) {
     body = makeUpdateLog(message, true)
@@ -53,11 +51,11 @@ async function editLog(message) {
   msg.edit(body)
 }
 function makeUpdateLog(message, isEasy) {
-  let channelData = guildsData.find(d => d.guildid === message.guild.id)?.channelsData
+  const channelData = guildsData.find(d => d.guildid === message.guild.id)?.channelsData
   if (channelData === undefined) return "まだテストしていません。"
-  let result = channelData.map((d) => {
-    let chName = message.guild.channels.cache.get(d.channelid).name
-    let sfData = d.questionsData.map((value, index) => {
+  const result = channelData.map((d) => {
+    const chName = message.guild.channels.cache.get(d.channelid).name
+    const sfData = d.questionsData.map((value, index) => {
       let s = "　" + (++index) + "問目　正解数:" + value.s + ",不正解数:" + value.f + "\n"
       if (isEasy) s = "　" + (++index) + "　" + value.s + "," + value.f + "\n"
       return s
@@ -77,13 +75,9 @@ client.on("messageCreate", async message => {
   if (message.channel.type !== "GUILD_TEXT") return;
   if (message.guild.channels.cache.get(message.channel.parentId)?.name !== "単語帳bot") return;
   if (message.channel.name !== "単語帳ターミナル") {
-    if (message.author.bot) return
-    if (message.channel.name === "単語帳log") {
-      return message.delete()
-    }
-    if (message.content.split("//").length !== 2) {
-      message.delete();
-    }
+    if (message.author.bot)return
+    if (message.channel.name === "単語帳log")return message.delete()
+    if (message.content.split("//").length !== 2) message.delete();
     if (message.content === "！ナンバリング" || message.content === "!numbering") {
       message.channel.messages
         .fetch({ limit: 100, after: "0" })
@@ -106,8 +100,8 @@ client.on("messageCreate", async message => {
               if (s.length === 1) {
                 re.push(reaction(b));
               } else if (s.length === 2) {
-                re.push(reaction(s.charAt(0)));
-                re.push(reaction(s.charAt(1)));
+                re.push(reaction(s[0]));
+                re.push(reaction(s[1]));
               }
             } else if (b === 99) {
               re.push("🇪");
@@ -115,10 +109,8 @@ client.on("messageCreate", async message => {
               re.push("🇩");
             }
             for (let c = 0; c < re.length; c++) {
-              if (re.length === 2) {
-                if (re[0] === re[1]) {
-                  re[1] = "🔁";
-                }
+              if (re.length === 2&&re[0] === re[1]) {
+                re[1] = "🔁";
               }
               msgs[a].react(re[c]);
             }
@@ -140,6 +132,7 @@ client.on("messageCreate", async message => {
       answers: [],
       trueAns: [],
       tested: [],
+      still:[],
       channel: {},
       questionsId: []
     });
@@ -158,13 +151,10 @@ client.on("messageCreate", async message => {
   if (message.content.startsWith("！問題チャンネル作成") || message.content.startsWith("!mkch")) {
     let line = message.content.split(/[、,]/g);
     let ch = message.guild.channels.cache.find(channel => channel.name === line[1]);
-    if (ch !== undefined) {
-      message.channel.send("このチャンネル名は既に存在しています");
-      return;
-    }
+    if (ch !== undefined) return message.channel.send("このチャンネル名は既に存在しています");
     if (line.length === 2) {
       message.guild.channels.create(line[1], {
-        type: "GUILD_TEXT",
+        type:"GUILD_TEXT",
         parent: message.guild.channels.cache.find(g => g.name === "単語帳bot")
       }).then(newChannel => {
         newChannel.send("「問題文//解答」の形式で100題未満で入力してください\n「!numbering」または「！ナンバリング」で題数を数えられます\n()の中の文字及び括弧自体は質問はされますが解答されなくても正解になります");
@@ -178,8 +168,8 @@ client.on("messageCreate", async message => {
   if ((message.content.startsWith("！テスト開始") || message.content.startsWith("!start")) && !thisGuildTestData.testing) {
     let line = message.content.split(/[,、]/g);
     let questionsChannel = message.guild.channels.cache.find(channel => channel.name === line[1]);
-    const firstMsg = await questionsChannel.messages.fetch({ after: "0", limit: 1 })
-    if (firstMsg.first().author.username !== client.user.username) return message.channel.send("「!mkch」コマンドで作成したチャンネルでしかテストすることが出来ません。")
+    const firstMsg = (await questionsChannel.messages.fetch({ after: "0", limit: 1 })).first()
+    if (firstMsg.author.username !== client.user.username||questionsChannel.name==="単語帳log") return message.channel.send("「!mkch」コマンドで作成したチャンネルでしかテストすることが出来ません。")
     if (isNaN(line[2] - 0)) {
       let fullWidthNam = ["０", "１", "２"]
       let index = fullWidthNam.indexOf(line[2])
@@ -190,20 +180,14 @@ client.on("messageCreate", async message => {
       }
     }
     thisGuildTestData.type = line[2];
-    if (!(thisGuildTestData.type === "0" || thisGuildTestData.type === "1" || thisGuildTestData.type === "2")) {
-      message.channel.send("typeは0~2で指定してください");
-      return;
-    }
-    if (questionsChannel === undefined) {
-      message.channel.send("この名前のチャンネルは存在しません");
-      return;
-    }
-    thisGuildTestData.channel = questionsChannel;
+    if (!(thisGuildTestData.type === "0" || thisGuildTestData.type === "1" || thisGuildTestData.type === "2")) return message.channel.send("typeは0~2で指定してください")
+    if (questionsChannel === undefined) return message.channel.send("この名前のチャンネルは存在しません")
+    thisGuildTestData.channel = questionsChannel
     thisGuildTestData.channelid = questionsChannel.id
-    thisGuildTestData.testing = true;
+    thisGuildTestData.testing = true
     thisGuildTestData.user = message.author.id;
     let messages = await questionsChannel.messages.fetch({ limit: 100, after: "0" })
-    let  questions= messages
+    let questions= messages
       .filter(message => !message.author.bot)
       .map(message => message);
     thisGuildTestData.questionsId.push(
@@ -211,9 +195,9 @@ client.on("messageCreate", async message => {
         .filter(message => !message.author.bot)
         .map(message => message.id)
     );
+    thisGuildTestData.still=Array(questions.length).fill(0).map((_,i)=>i)
     for (let i = 0; i < questions.length; i++) {
-      let preline = questions[i].content.split(" ")[0];
-      let line = preline.split("//");
+      let line = questions[i].content.split("//");
       if (line.length === 2) {
         thisGuildTestData.questions.push({
           statement: line[0],
@@ -240,16 +224,12 @@ client.on("messageCreate", async message => {
     return editLog(message)
   }
   if (thisGuildTestData.testing && (((message.author.username === client.user.username && message.content === "テストを開始します") || message.author.id === thisGuildTestData.user))) {
-    if (message.content !== "テストを開始します") {
-      thisGuildTestData.answers.push(message.content);
-    }
+    if (message.content !== "テストを開始します") thisGuildTestData.answers.push(message.content);
     if (thisGuildTestData.testing &&
       thisGuildTestData.questions.length > thisGuildTestData.tested.length) {
-      let ransu = Math.floor(Math.random() * thisGuildTestData.questions.length);
-      while (thisGuildTestData.tested.includes(ransu)) {
-        ransu = Math.floor(Math.random() * thisGuildTestData.questions.length);
-      }
+      let ransu=thisGuildTestData.still[Math.floor(Math.random()*(thisGuildTestData.still.length-1))]
       thisGuildTestData.tested.push(ransu);
+      thisGuildTestData.still=thisGuildTestData.still.filter(v=>v!==ransu)
       if (thisGuildTestData.type === "0") {
         message.channel.send(thisGuildTestData.questions[ransu].statement);
         thisGuildTestData.trueAns.push(thisGuildTestData.questions[ransu].answer);
@@ -266,7 +246,7 @@ client.on("messageCreate", async message => {
           thisGuildTestData.trueAns.push(thisGuildTestData.questions[ransu].statement);
         }
       }
-      fs.writeFileSync("data.json", JSONbig.stringify({ "guildsData": guildsData, "testData": testData }, null, " "))
+      return fs.writeFileSync("data.json", JSONbig.stringify({ "guildsData": guildsData, "testData": testData }, null, " "))
     } else if (
       thisGuildTestData.questions.length ===
       thisGuildTestData.tested.length &&
@@ -326,8 +306,7 @@ client.on("messageCreate", async message => {
           //data格納終了
           let ans = "「問題文//解答」の形式で100題未満で入力してください\n「!numbering」または「！ナンバリング」で題数を数えられます\n()の中の文字及び括弧自体は質問はされますが解答されなくても正解になります\n";
           for (let a = 0; a < SoFA.length; a++) {
-            let per =
-              Math.round((thisdata[a].s * 10000) / (thisdata[a].s + thisdata[a].f)) / 100;
+            let per = Math.round((thisdata[a].s * 10000) / (thisdata[a].s + thisdata[a].f)) / 100;
             let b = a + 1;
             let thisline = "問題" + b + ":正答率" + per + "%\n";
             ans = ans + thisline;
