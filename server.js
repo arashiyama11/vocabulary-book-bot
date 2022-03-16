@@ -1,8 +1,7 @@
 require('dotenv').config();
 const JSONbig = require("json-bigint")
-const discord = require("discord.js");
 const fs = require("fs");
-const { Client, Util } = discord
+const { Client, Util ,MessageEmbed} = require("discord.js")
 const options = {
   intents: ["GUILDS", "GUILD_MESSAGES"],
 };
@@ -13,10 +12,11 @@ if (!fs.existsSync("./data.json")) {
 let { testData, guildsData } = JSONbig.parse(fs.readFileSync("./data.json"))
 client.on("ready", () => {
   console.log("bot is running")
-  const embed = new discord.MessageEmbed()
+  const embed = new MessageEmbed()
     .setTitle("restart log")
     .addField("reason", "botのメンテナンスです。")
     .addField("TimeStamp", new Date().toLocaleString('ja-JP'))
+    .addField("!stopLog","ログが送信されなくなります")
     .setColor(7506394)
     .setFooter({ text: "タイトルをクリックすると一番上に移動します" })
   sendAllLog({ embeds: [embed] }, true)
@@ -30,11 +30,17 @@ const reaction = (num) => ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣"
 function sendAllGuild(msg) {
   client.channels.cache.filter(ch => ch.name === "単語帳ターミナル").forEach(ch => ch.send(msg))
 }
-function sendAllLog(msg, addTopURL) {
+function sendAllLog(msg, isRestart) {
   client.channels.cache.filter(ch => ch.name === "単語帳log").forEach(async ch => {
-    const msgs = await ch.messages.fetch({ limit: 1, after: "0" })
-    if (addTopURL) msg.embeds[0].setURL(msgs.first().url)
-    ch.send(msg)
+    let first
+    let last
+    if(isRestart){
+      [first,last]=(await Promise.all([ch.messages.fetch({limit:1,after:"0"}),ch.messages.fetch({limit:1})])).map(v=>v.first())
+      msg.embeds[0].setURL(first.url)
+    }else{
+      first=(await ch.messages.fetch({ limit: 1, after: "0" })).first()
+    }
+    if(last.content!=="!stopLog")ch.send(msg)
   })
 }
 async function editLog(message) {
@@ -76,7 +82,10 @@ client.on("messageCreate", async message => {
   if (message.guild.channels.cache.get(message.channel.parentId)?.name !== "単語帳bot") return;
   if (message.channel.name !== "単語帳ターミナル") {
     if (message.author.bot)return
-    if (message.channel.name === "単語帳log")return message.delete()
+    if (message.channel.name === "単語帳log"){
+      if(message.content==="!stopLog")return
+      else message.delete()
+    }
     if (message.content.split("//").length !== 2) message.delete();
     if (message.content === "！ナンバリング" || message.content === "!numbering") {
       message.channel.messages
@@ -137,8 +146,7 @@ client.on("messageCreate", async message => {
       questionsId: []
     });
     thisGuildTestData = testData.find(data => data.guildid === message.guild.id);
-  }
-  thisGuildTestData.channel = client.channels.cache.get(thisGuildTestData?.channel?.id)
+  }else thisGuildTestData.channel = client.channels.cache.get(thisGuildTestData.channel.id)
   if (message.content.startsWith("!mklogch") || message.content.startsWith("！ログチャンネル作成")) {
     if (message.guild.channels.cache.find(ch => ch.name === "単語帳log") !== undefined) return message.channel.send("既にログ用のチャンネルが存在します")
     const logch = await message.guild.channels.create("単語帳log", { parent: message.channel.parent })
@@ -347,7 +355,7 @@ client.on("messageCreate", async message => {
     return;
   }
   if (message.content === "!" || message.content === "！") {
-    const embed = new discord.MessageEmbed()
+    const embed = new MessageEmbed()
       .setTitle("コマンド一覧")
       .setDescription("日本語入力、英語入力に対応しています。日本語入力の場合は区切り文字を読点、英語入力の場合は区切り文字をカンマにしてください。\n詳しい説明はこちらのURLまでhttps://github.com/jinjanow/Vocabulary-Book-Bot#readme\n")
       .setColor(7506394)
