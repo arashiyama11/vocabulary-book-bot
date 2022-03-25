@@ -357,7 +357,7 @@ client.on("messageCreate", async message => {
   if (message.content === "!" || message.content === "！") {
     const embed = new MessageEmbed()
       .setTitle("コマンド一覧")
-      .setDescription("日本語入力、英語入力に対応しています。日本語入力の場合は区切り文字を読点、英語入力の場合は区切り文字をカンマにしてください。\n詳しい説明はこちらのURLまでhttps://github.com/jinjanow/Vocabulary-Book-Bot#readme\n")
+      .setDescription("日本語入力、英語入力に対応しています。日本語入力の場合は区切り文字を読点、英語入力の場合は区切り文字をカンマにしてください。\n詳しい説明はこちらのURLまでhttps://github.com/arashi-yama/Vocabulary-Book-Bot#readme\n")
       .setColor(7506394)
       .addField("!mkch(！問題チャンネル作成),__name__", "```新しい問題用チャンネルを作成します```")
       .addField("!start(！テスト開始),__channelName__,__type__", "```channelNameのチャンネルの問題でテストを開始します\ntypeは0~2を半角で入力し、テストの方法を選択します\n0は通常通りに解答します\n1は答えから問題文を解答します\n2は0,1のランダムです```")
