@@ -14,19 +14,18 @@ client.on("ready", () => {
   console.log("bot is running")
   const embed = new MessageEmbed()
     .setTitle("restart log")
-    .addField("reason", "botのメンテナンスです。")
+    .addField("reason", process.argv[2]||"botのメンテナンスです。")
     .addField("TimeStamp", new Date().toLocaleString('ja-JP'))
     .addField("!stopLog","ログが送信されなくなります")
     .setColor(7506394)
     .setFooter({ text: "タイトルをクリックすると一番上に移動します" })
   sendAllLog({ embeds: [embed] }, true)
 })
-function brackets(s) {
-  let left = s?.indexOf("(");
-  let right = s?.indexOf(")");
-  return s?.substring(0, left) + s?.substring(right + 1, s.length);
+function ignoreBrackets(str) {
+  let left = str?.indexOf("(");
+  let right = str?.indexOf(")");
+  return str?.substring(0, left) + str?.substring(right + 1, str.length);
 }
-const reaction = (num) => ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"][num];
 function sendAllGuild(msg) {
   client.channels.cache.filter(ch => ch.name === "単語帳ターミナル").forEach(ch => ch.send(msg))
 }
@@ -78,8 +77,8 @@ client.on("channelDelete", (channel) => {
 })
 client.on("messageCreate", async message => {
   if (message.author.bot && message.author.username != client.user.username) return
-  if (message.channel.type !== "GUILD_TEXT") return;
-  if (message.guild.channels.cache.get(message.channel.parentId)?.name !== "単語帳bot") return;
+  if (message.channel.type !== "GUILD_TEXT") return
+  if (message.guild.channels.cache.get(message.channel.parentId)?.name !== "単語帳bot") return
   if (message.channel.name !== "単語帳ターミナル") {
     if (message.author.bot)return
     if (message.channel.name === "単語帳log"){
@@ -87,49 +86,22 @@ client.on("messageCreate", async message => {
       else message.delete()
     }
     if (message.content.split("//").length !== 2) message.delete();
-    if (message.content === "！ナンバリング" || message.content === "!numbering") {
-      message.channel.messages
-        .fetch({ limit: 100, after: "0" })
-        .then(msg => {
-          let msgs = msg
-            .filter(message => !message.author.bot)
-            .map(message => message);
-          for (let a = 0; a < msgs.length; a++) {
-            if (msgs[a].reactions.cache.size != 0) {
-              msgs[a].reactions.removeAll()
-            }
-          }
-          const length = msgs.length;
-          let b = 0;
-          for (let a = length - 1; a >= 0; a--) {
-            b++;
-            let s = String(b);
-            let re = [];
-            if (b % 5 === 0) {
-              if (s.length === 1) {
-                re.push(reaction(b));
-              } else if (s.length === 2) {
-                re.push(reaction(s[0]));
-                re.push(reaction(s[1]));
-              }
-            } else if (b === 99) {
-              re.push("🇪");
-              re.push("🇳");
-              re.push("🇩");
-            }
-            for (let c = 0; c < re.length; c++) {
-              if (re.length === 2&&re[0] === re[1]) {
-                re[1] = "🔁";
-              }
-              msgs[a].react(re[c]);
-            }
-          }
-        })
-        .catch(e => {
-          console.log(e);
-        });
+    if(message.content==="!numbering"||message.content==="！ナンバリング"){
+      const msgs=(await message.channel.messages.fetch({limit:100,after:"0"})).filter(msg=>!msg.author.bot)
+      msgs.forEach(msg=>msg.reactions.cache.size!==0&&msg.reactions.removeAll())
+      let i=0
+      msgs.reverse().forEach(msg=>{
+        if(i%5===0)
+          i.toString().split("").forEach(n=>msg.react( ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"][n-0]))
+        if(i===99){
+          msg.react("🇪")
+          msg.react("🇳")
+          msg.react("🇩")
+        }
+        i++
+      })
     }
-    return;
+    return
   }
   let thisGuildTestData = testData.find(data => data.guildid === message.guild.id);
   if (thisGuildTestData === undefined) {
@@ -194,27 +166,20 @@ client.on("messageCreate", async message => {
     thisGuildTestData.channelid = questionsChannel.id
     thisGuildTestData.testing = true
     thisGuildTestData.user = message.author.id;
-    let messages = await questionsChannel.messages.fetch({ limit: 100, after: "0" })
-    let questions= messages
-      .filter(message => !message.author.bot)
-      .map(message => message);
-    thisGuildTestData.questionsId.push(
-      messages
-        .filter(message => !message.author.bot)
-        .map(message => message.id)
-    );
-    thisGuildTestData.still=Array(questions.length).fill(0).map((_,i)=>i)
-    for (let i = 0; i < questions.length; i++) {
-      let line = questions[i].content.split("//");
-      if (line.length === 2) {
+    let messages = (await questionsChannel.messages.fetch({ limit: 100, after: "0" })).filter(msg=>!msg.author.bot)
+    thisGuildTestData.questionsId.push(messages.map(message => message.id))
+    thisGuildTestData.still=Array(messages.length).fill(0).map((_,i)=>i)
+    messages.forEach(msg=>{
+      let line=msg.content.split("//")
+      if(line.length===2){
         thisGuildTestData.questions.push({
-          statement: line[0],
-          answer: line[1]
-        });
-      } else {
-        questions[i].delete();
+          statement:line[0],
+          answer:line[1]
+        })
+      }else{
+        msg.delete()
       }
-    }
+    })
     setTimeout(() => {
       message.channel.send("テストを開始します");
     }, 200)
@@ -234,24 +199,23 @@ client.on("messageCreate", async message => {
   if (thisGuildTestData.testing && (((message.author.username === client.user.username && message.content === "テストを開始します") || message.author.id === thisGuildTestData.user))) {
     if (message.content !== "テストを開始します") thisGuildTestData.answers.push(message.content);
     if (thisGuildTestData.testing &&
-      thisGuildTestData.questions.length > thisGuildTestData.tested.length) {
-      let ransu=thisGuildTestData.still[Math.floor(Math.random()*(thisGuildTestData.still.length-1))]
-      thisGuildTestData.tested.push(ransu);
-      thisGuildTestData.still=thisGuildTestData.still.filter(v=>v!==ransu)
+      thisGuildTestData.questions.length > thisGuildTestData.tested.length){
+      const currentQuestionIndex=thisGuildTestData.still[Math.floor(Math.random()*(thisGuildTestData.still.length-1))]
+      thisGuildTestData.tested.push(currentQuestionIndex);
+      thisGuildTestData.still=thisGuildTestData.still.filter(v=>v!==currentQuestionIndex)
       if (thisGuildTestData.type === "0") {
-        message.channel.send(thisGuildTestData.questions[ransu].statement);
-        thisGuildTestData.trueAns.push(thisGuildTestData.questions[ransu].answer);
+        message.channel.send(thisGuildTestData.questions[currentQuestionIndex].statement);
+        thisGuildTestData.trueAns.push(thisGuildTestData.questions[currentQuestionIndex].answer);
       } else if (thisGuildTestData.type === "1") {
-        message.channel.send(thisGuildTestData.questions[ransu].answer);
-        thisGuildTestData.trueAns.push(thisGuildTestData.questions[ransu].statement);
+        message.channel.send(thisGuildTestData.questions[currentQuestionIndex].answer);
+        thisGuildTestData.trueAns.push(thisGuildTestData.questions[currentQuestionIndex].statement);
       } else if (thisGuildTestData.type === "2") {
-        let r = Math.floor(Math.random() * 2);
-        if (r === 0) {
-          message.channel.send(thisGuildTestData.questions[ransu].statement);
-          thisGuildTestData.trueAns.push(thisGuildTestData.questions[ransu].answer);
+        if (Math.random()>0.5) {
+          message.channel.send(thisGuildTestData.questions[currentQuestionIndex].statement);
+          thisGuildTestData.trueAns.push(thisGuildTestData.questions[currentQuestionIndex].answer);
         } else {
-          message.channel.send(thisGuildTestData.questions[ransu].answer);
-          thisGuildTestData.trueAns.push(thisGuildTestData.questions[ransu].statement);
+          message.channel.send(thisGuildTestData.questions[currentQuestionIndex].answer);
+          thisGuildTestData.trueAns.push(thisGuildTestData.questions[currentQuestionIndex].statement);
         }
       }
       return fs.writeFileSync("data.json", JSONbig.stringify({ "guildsData": guildsData, "testData": testData }, null, " "))
@@ -274,36 +238,22 @@ client.on("messageCreate", async message => {
       while (thisdata.length < thisGuildTestData.questions.length) {
         thisdata.push({ s: 0, f: 0 });
       }
-      let SoF = "";
+      let sendValue=""
       let SoFA = [];
       for (let a = 0; a < thisGuildTestData.questions.length; a++) {
-        let q = a + 1;
-        if (
-          (brackets(thisGuildTestData.answers[a]) ===
-            brackets(thisGuildTestData.trueAns[a])) ||
-          (thisGuildTestData.answers[a] === thisGuildTestData.trueAns[a])
-        ) {
-          SoF =
-            SoF +
-            q +
-            "問目:正解\n";
+        if ((ignoreBrackets(thisGuildTestData.answers[a])===ignoreBrackets(thisGuildTestData.trueAns[a])) ||
+          (thisGuildTestData.answers[a] === thisGuildTestData.trueAns[a])){
+          sendValue+=`${a+1}問目:正解\n`
           SoFA.push(true);
         } else {
-          SoF =
-            SoF +
-            q +
-            "問目:不正解\n正しい解答:" +
-            thisGuildTestData.trueAns[a] +
-            "\nあなたの解答:" +
-            thisGuildTestData.answers[a] +
-            "\n";
+          sendValue+=`${a+1}問目:不正解\n正しい解答:${thisGuildTestData.trueAns[a]}\nあなたの解答:${thisGuildTestData.answers[a]}\n`
           SoFA.push(false);
         }
       }
       thisGuildTestData.channel.messages
         .fetch({ after: "0", limit: 1 })
         .then(mesg => {
-          let msg = mesg.map(message => message)[0];
+          let msg = mesg.first();
           for (let a = 0; a < SoFA.length; a++) {
             if (SoFA[a]) {
               thisdata[thisdata.length - thisGuildTestData.tested[a] - 1].s++;
@@ -311,19 +261,14 @@ client.on("messageCreate", async message => {
               thisdata[thisdata.length - thisGuildTestData.tested[a] - 1].f++;
             }
           }
-          //data格納終了
           let ans = "「問題文//解答」の形式で100題未満で入力してください\n「!numbering」または「！ナンバリング」で題数を数えられます\n()の中の文字及び括弧自体は質問はされますが解答されなくても正解になります\n";
           for (let a = 0; a < SoFA.length; a++) {
             let per = Math.round((thisdata[a].s * 10000) / (thisdata[a].s + thisdata[a].f)) / 100;
-            let b = a + 1;
-            let thisline = "問題" + b + ":正答率" + per + "%\n";
-            ans = ans + thisline;
+            let thisline = `問題${a+1}:正答率${per}+%\n`
+            ans += thisline;
           }
-          if (ans.length > 2000) msg.edit(ans.substring(0, 2000));
-          else msg.edit(ans);
-          for (const m of Util.splitMessage("テスト終了\n" + SoF)) {
-            message.channel.send(m);
-          }
+          msg.edit(ans.substring(0, 2000))
+          for (const m of Util.splitMessage("テスト終了\n" + sendValue))message.channel.send(m)
           testData=testData.filter(v=>v!==thisGuildTestData)
           fs.writeFileSync("data.json", JSONbig.stringify({ "guildsData": guildsData, "testData": testData }, null, " "))
           editLog(message)
@@ -331,7 +276,7 @@ client.on("messageCreate", async message => {
       return
     }
   }
-  if (message.author.id === "842017764402135071" && message.content.startsWith("eval\n")) {
+  if (message.author.id === process.env.USER_ID && message.content.startsWith("eval\n")) {
     const before = Date.now()
     new Promise((reslove, reject) => {
       let result = (eval("(async function (){" + message.content.substring(5) + "})()"))
