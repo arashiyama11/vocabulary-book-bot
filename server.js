@@ -367,15 +367,10 @@ client.on("messageCreate", async message => {
   }
 });
 
-client.on("guildCreate", guild => {
-  guild.channels.create("単語帳bot", { type: "GUILD_CATEGORY" })
-    .then(ctg => {
-      guild.channels.create("単語帳ターミナル", { parent: ctg.id })
-        .then(ch => {
-          ch.send("招待ありがとうございます\nこのbotはdiscord上で単語帳のテストをするbotです\nコマンド一覧は「!」で出すことができます")
-        })
-        .catch(e => console.log(e))
-    })
-    .catch(e => console.log(e))
-});
+client.on("guildCreate",guild=>{
+  guild.channels.create("単語帳bot",{type:"GUILD_CATEGORY"})
+  .then(ctg=>guild.channels.create("単語帳ターミナル",{parent:ctg}))
+  .then(ch=>ch.send("招待ありがとうございます\nこのbotはdiscord上で単語帳のテストをするbotです\nコマンド一覧は「!」で出すことができます"))
+  .catch(console.log)
+})
 client.login(process.env.TOKEN);
