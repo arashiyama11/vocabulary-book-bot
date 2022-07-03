@@ -105,6 +105,4 @@ user:集める(c)
 また、一つのチャンネルに100題以上の問題があると、古いメッセージから順番に読み込まれ、100題名以降は読み込まれません。`!numbering`,`！ナンバリング`コマンドで題数を数えられます。
 
 # 製作者  
-## [jinjanow](https://twitter.com/mejiroship)
-### 
-### sorce-code https://github.com/jinjanow/Vocabulary-Book-Bot/blob/main/server.js
+## [arashiyama](https://twitter.com/arash1yama)
