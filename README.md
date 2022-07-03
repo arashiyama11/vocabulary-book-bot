@@ -106,5 +106,3 @@ user:集める(c)
 
 # 製作者  
 ## [arashiyama](https://twitter.com/arash1yama)
-### 
-### sorce-code https://github.com/jinjanow/Vocabulary-Book-Bot/blob/main/server.js
